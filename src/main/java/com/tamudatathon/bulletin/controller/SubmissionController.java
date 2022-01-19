@@ -1,5 +1,6 @@
 package com.tamudatathon.bulletin.controller;
 
+import java.net.URL;
 import java.text.ParseException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,6 +10,8 @@ import com.tamudatathon.bulletin.data.entity.Submission;
 import com.tamudatathon.bulletin.service.SubmissionService;
 import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
+import com.tamudatathon.bulletin.util.exception.FileDeleteException;
+import com.tamudatathon.bulletin.util.exception.FileUploadException;
 import com.tamudatathon.bulletin.util.exception.SubmissionInvalidException;
 import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
 
@@ -22,8 +25,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import net.minidev.json.JSONObject;
 
 @RestController
 @RequestMapping("${app.api.basepath}/events/{eventId}/challenges/{challengeId}/submissions")
@@ -77,6 +84,62 @@ public class SubmissionController {
         } catch (Exception e) {
             e.printStackTrace();
             throw new SubmissionInvalidException(e.getMessage());
+        }
+    }
+
+    @RequestMapping(value={"/{id}/icon/save"},
+        method={RequestMethod.POST, RequestMethod.PUT})
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Object> uploadIcon(@RequestPart(value = "icon") MultipartFile file, @PathVariable Long eventId,
+        @PathVariable Long challengeId, @PathVariable Long id) 
+        throws FileUploadException {
+        try {
+            URL url = this.submissionService.uploadIcon(file, eventId, challengeId, id);
+            JSONObject resp = new JSONObject();
+            resp.put("url", url.toString());
+            return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+        } catch (Exception e) {
+            throw new FileUploadException(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/icon/delete")
+    public ResponseEntity<Object> deleteIcon(@PathVariable Long eventId, 
+        @PathVariable Long challengeId, @PathVariable Long id) 
+        throws FileDeleteException {
+        try {
+            this.submissionService.deleteIcon(eventId, challengeId, id);
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } catch (Exception e) {
+            throw new FileDeleteException(e.getMessage());
+        }
+    }
+
+    @RequestMapping(value={"/{id}/source-code/save"},
+        method={RequestMethod.POST, RequestMethod.PUT})
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Object> uploadSourceCode(@RequestPart(value = "source-code") MultipartFile file, @PathVariable Long eventId,
+        @PathVariable Long challengeId, @PathVariable Long id) 
+        throws EventNotFoundException, ChallengeNotFoundException {
+        try {
+            URL url = this.submissionService.uploadSourceCode(file, eventId, challengeId, id);
+            JSONObject resp = new JSONObject();
+            resp.put("url", url.toString());
+            return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+        } catch (Exception e) {
+            throw new FileUploadException(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}/source-code/delete")
+    public ResponseEntity<Object> deleteSourceCode(@PathVariable Long eventId, 
+        @PathVariable Long challengeId, @PathVariable Long id) 
+        throws FileDeleteException {
+        try {
+            this.submissionService.deleteSourceCode(eventId, challengeId, id);
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } catch (Exception e) {
+            throw new FileDeleteException(e.getMessage());
         }
     }
 

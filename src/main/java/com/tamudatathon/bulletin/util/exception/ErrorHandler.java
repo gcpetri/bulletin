@@ -67,4 +67,16 @@ public class ErrorHandler {
     public QuestionInvalidException handleQuestionInvalidException(QuestionInvalidException ce) {
         return ce;
     }
+
+    @ExceptionHandler(FileUploadException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public FileUploadException handleFileUploadException(FileUploadException ce) {
+        return ce;
+    }
+
+    @ExceptionHandler(FileDeleteException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public FileDeleteException handleFileDeleteException(FileDeleteException ce) {
+        return ce;
+    }
 }

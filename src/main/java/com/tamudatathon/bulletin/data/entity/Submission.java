@@ -15,6 +15,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -64,14 +65,8 @@ public class Submission {
     @Column(name="SOURCE_CODE_URL")
     private URL sourceCodeUrl;
 
-    @Column(name="SOURCE_CODE_KEY")
-    private String sourceCodeKey;
-
     @Column(name="ICON_URL")
     private URL iconUrl;
-
-    @Column(name="ICON_KEY")
-    private String iconKey;
 
     @OneToMany(mappedBy="submission",
         targetEntity=Accolade.class,
@@ -84,6 +79,12 @@ public class Submission {
         cascade=CascadeType.ALL,
         orphanRemoval=true)
     private List<SubmissionQuestion> submissionQuestions = new ArrayList<>();
+
+    @JoinTable(name="USER_SUBMISSIONS",
+        joinColumns=@JoinColumn(name="SUBMISSION_ID"),
+        inverseJoinColumns=@JoinColumn(name="USER_ID"))
+    @OneToMany
+    private List<User> users = new ArrayList<>();
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -146,28 +147,12 @@ public class Submission {
         this.sourceCodeUrl = sourceCodeUrl;
     }
 
-    public String getSourceCodeKey() {
-        return this.sourceCodeKey;
-    }
-
-    public void setSourceCodeKey(String sourceCodeKey) {
-        this.sourceCodeKey = sourceCodeKey;
-    }
-
     public URL getIconUrl() {
         return this.iconUrl;
     }
 
     public void setIconUrl(URL iconUrl) {
         this.iconUrl = iconUrl;
-    }
-
-    public String getIconKey() {
-        return this.iconKey;
-    }
-
-    public void setIconKey(String iconKey) {
-        this.iconKey = iconKey;
     }
 
     public Collection<URL> getLinks() {
@@ -188,6 +173,14 @@ public class Submission {
 
     public List<Accolade> getAccolades() {
         return this.accolades;
+    }
+
+    public void setUsers(List<User> users) {
+        this.users = users;
+    }
+
+    public List<User> getUsers() {
+        return this.users;
     }
 
     public void setAccolades(List<Accolade> accolades) {
@@ -220,5 +213,17 @@ public class Submission {
         if (this.submissionQuestions == null) this.submissionQuestions = new ArrayList<>();
         this.submissionQuestions.remove(submissionQuestion);
         submissionQuestion.setSubmission(null);
+    }
+
+    public void addAccolade(Accolade accolade) {
+        if (this.accolades == null) this.accolades = new ArrayList<>();
+        this.accolades.add(accolade);
+        accolade.setSubmission(this);
+    }
+
+    public void removeAccolade(Accolade accolade) {
+        if (this.accolades == null) this.accolades = new ArrayList<>();
+        this.accolades.remove(accolade);
+        accolade.setSubmission(null);
     }
 }

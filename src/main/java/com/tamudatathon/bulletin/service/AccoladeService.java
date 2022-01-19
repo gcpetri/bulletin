@@ -4,13 +4,17 @@ import java.util.List;
 
 import com.tamudatathon.bulletin.data.entity.Accolade;
 import com.tamudatathon.bulletin.data.entity.Challenge;
+import com.tamudatathon.bulletin.data.entity.Submission;
 import com.tamudatathon.bulletin.data.repository.AccoladeRepository;
 import com.tamudatathon.bulletin.data.repository.ChallengeRepository;
+import com.tamudatathon.bulletin.data.repository.SubmissionRepository;
 import com.tamudatathon.bulletin.util.exception.AccoladeInvalidException;
 import com.tamudatathon.bulletin.util.exception.AccoladeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
+import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -21,15 +25,18 @@ public class AccoladeService {
  
     private final AccoladeRepository accoladeRepository;
     private final ChallengeRepository challengeRepository;
+    private final SubmissionRepository submissionRepository;
     private final CommonService commonService;
  
     @Autowired
     public AccoladeService(AccoladeRepository accoladeRepository,
         ChallengeRepository challengeRepository,
-        CommonService commonService) {
+        CommonService commonService,
+        SubmissionRepository submissionRepository) {
         this.accoladeRepository = accoladeRepository;
         this.challengeRepository = challengeRepository;
         this.commonService = commonService;
+        this.submissionRepository = submissionRepository;
     }
 
     public List<Accolade> getAccolades(Long eventId, Long challengeId) throws EventNotFoundException,
@@ -72,7 +79,7 @@ public class AccoladeService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public void deleteAccolade(Long challengeId, Long eventId, Long accoladeId) throws EventNotFoundException,
+    public void deleteAccolade(Long eventId, Long challengeId, Long accoladeId) throws EventNotFoundException,
         ChallengeNotFoundException, AccoladeNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         for (Accolade accolade : challenge.getAccolades()) {
@@ -84,5 +91,26 @@ public class AccoladeService {
             }
         }
 	    throw new AccoladeNotFoundException(accoladeId);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW,
+        rollbackFor = Exception.class)
+    public HttpStatus toggleAccoladeToSubmission(Long eventId, Long challengeId, Long accoladeId, Long submissionId)
+        throws EventNotFoundException, ChallengeNotFoundException, AccoladeNotFoundException,
+        SubmissionNotFoundException {
+        Submission submission = this.commonService.validEventChallengeSubmission(eventId, challengeId, submissionId);
+        Accolade accolade = this.accoladeRepository.findById(accoladeId)
+            .orElseThrow(() -> new AccoladeNotFoundException(accoladeId));
+        if (accolade.getChallenge().getChallengeId() != challengeId) {
+            throw new ChallengeNotFoundException(challengeId);
+        }
+        if (submission.getAccolades().contains(accolade)) {
+            submission.removeAccolade(accolade);
+            this.submissionRepository.save(submission);
+            return HttpStatus.NO_CONTENT;
+        }
+        submission.addAccolade(accolade);
+        this.submissionRepository.save(submission);
+        return HttpStatus.OK;
     }
 }

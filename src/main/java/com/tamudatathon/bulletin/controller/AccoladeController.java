@@ -11,6 +11,7 @@ import com.tamudatathon.bulletin.util.exception.AccoladeInvalidException;
 import com.tamudatathon.bulletin.util.exception.AccoladeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
+import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +79,15 @@ public class AccoladeController {
             e.printStackTrace();
             throw new AccoladeInvalidException(e.getMessage());
         }
+    }
+
+    @RequestMapping(value={"/{id}/submissions/{submissionId}"},
+        method={RequestMethod.POST, RequestMethod.PUT})
+    public ResponseEntity<Object> toggleAccoladeToSubmission(@PathVariable Long eventId, @PathVariable Long challengeId,
+        @PathVariable Long id, @PathVariable Long submissionId) throws AccoladeNotFoundException, ChallengeNotFoundException, 
+        EventNotFoundException, SubmissionNotFoundException {
+        HttpStatus httpCode = this.accoladeService.toggleAccoladeToSubmission(eventId, challengeId, id, submissionId);
+        return ResponseEntity.status(httpCode).build();
     }
 
     // utils

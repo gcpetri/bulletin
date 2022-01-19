@@ -11,6 +11,8 @@ import com.tamudatathon.bulletin.service.ChallengeService;
 import com.tamudatathon.bulletin.util.exception.ChallengeInvalidException;
 import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
+import com.tamudatathon.bulletin.util.exception.FileDeleteException;
+import com.tamudatathon.bulletin.util.exception.FileUploadException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,25 +88,25 @@ public class ChallengeController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Object> uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long eventId,
         @PathVariable Long id) 
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws FileUploadException {
         try {
             URL url = this.challengeService.uploadImage(file, eventId, id);
             JSONObject resp = new JSONObject();
             resp.put("url", url.toString());
             return ResponseEntity.status(HttpStatus.CREATED).body(resp);
         } catch (Exception e) {
-            throw new ChallengeNotFoundException(id);
+            throw new FileUploadException(e.getMessage());
         }
     }
 
     @DeleteMapping("/{id}/image/delete")
     public ResponseEntity<Object> deleteImage(@PathVariable Long eventId, @PathVariable Long id) 
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws FileDeleteException {
         try {
             this.challengeService.deleteImage(eventId, id);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         } catch (Exception e) {
-            throw new ChallengeNotFoundException(id);
+            throw new FileDeleteException(e.getMessage());
         }
     }
 

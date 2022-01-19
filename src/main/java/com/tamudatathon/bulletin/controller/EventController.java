@@ -27,6 +27,8 @@ import com.tamudatathon.bulletin.data.entity.Event;
 import com.tamudatathon.bulletin.service.EventService;
 import com.tamudatathon.bulletin.util.exception.EventInvalidException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
+import com.tamudatathon.bulletin.util.exception.FileDeleteException;
+import com.tamudatathon.bulletin.util.exception.FileUploadException;
 
 @RestController
 @RequestMapping("${app.api.basepath}/events")
@@ -82,24 +84,24 @@ public class EventController {
         method={RequestMethod.POST, RequestMethod.PUT})
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Object> uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long id) 
-        throws EventNotFoundException {
+        throws FileUploadException {
         try {
             URL url = this.eventService.uploadImage(file, id);
             JSONObject resp = new JSONObject();
             resp.put("url", url.toString());
             return ResponseEntity.status(HttpStatus.CREATED).body(resp);
         } catch (Exception e) {
-            throw new EventNotFoundException(id);
+            throw new FileUploadException(e.getMessage());
         }
     }
 
     @DeleteMapping("/{id}/image/delete")
-    public ResponseEntity<Object> deleteImage(@PathVariable Long id) throws EventNotFoundException {
+    public ResponseEntity<Object> deleteImage(@PathVariable Long id) throws FileDeleteException {
         try {
             this.eventService.deleteImage(id);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         } catch (Exception e) {
-            throw new EventNotFoundException(id);
+            throw new FileDeleteException(e.getMessage());
         }
     }
 
