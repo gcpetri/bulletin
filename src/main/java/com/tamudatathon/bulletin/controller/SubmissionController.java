@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.tamudatathon.bulletin.data.dtos.SubmissionDto;
+import com.tamudatathon.bulletin.data.dtos.mapping.property.PropertyMaps;
 import com.tamudatathon.bulletin.data.entity.Submission;
+import com.tamudatathon.bulletin.data.entity.User;
 import com.tamudatathon.bulletin.service.SubmissionService;
 import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
@@ -22,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -38,17 +41,23 @@ public class SubmissionController {
     
     private final SubmissionService submissionService;
     private final ModelMapper modelMapper;
+    private final PropertyMaps propertyMaps;
     
     @Autowired
     public SubmissionController(SubmissionService submissionService,
-        ModelMapper modelMapper) {
+        ModelMapper modelMapper,
+        PropertyMaps propertyMaps) {
         this.submissionService = submissionService;
         this.modelMapper = modelMapper;
+        this.propertyMaps = propertyMaps;
+        this.modelMapper.addMappings(this.propertyMaps.getUserToDtoMap());
+        this.modelMapper.addMappings(this.propertyMaps.getUserFromDtoMap());
     }
 
     @GetMapping(value={"", "/", "/list"})
     public List<SubmissionDto> getSubmissions(@PathVariable Long eventId, @PathVariable Long challengeId)
         throws EventNotFoundException, ChallengeNotFoundException {
+        System.out.println("getting accolades");
         List<Submission> submissions = this.submissionService.getSubmissions(eventId, challengeId);
         return submissions.stream()
           .map(this::convertToDto)
@@ -73,13 +82,14 @@ public class SubmissionController {
     @RequestMapping(value={"/save", "/save/{id}"},
         method={RequestMethod.POST, RequestMethod.PUT})
     @ResponseStatus(HttpStatus.CREATED)
-    public SubmissionDto createSubmission(@RequestBody SubmissionDto submissionDto,
+    public SubmissionDto createSubmission(@RequestAttribute("user") Object userAttr, @RequestBody SubmissionDto submissionDto,
         @PathVariable Long eventId, @PathVariable Long challengeId,
         @PathVariable(required=false) Long id) throws ChallengeNotFoundException, EventNotFoundException,
         SubmissionNotFoundException, SubmissionInvalidException {
         try {
+            User user = (User) userAttr;
             Submission submission = this.convertToEntity(submissionDto);
-            Submission newSubmission = this.submissionService.addSubmission(eventId, challengeId, id, submission);
+            Submission newSubmission = this.submissionService.addSubmission(eventId, challengeId, id, submission, user);
             return convertToDto(newSubmission);
         } catch (Exception e) {
             e.printStackTrace();

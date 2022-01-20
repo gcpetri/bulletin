@@ -1,10 +1,12 @@
 package com.tamudatathon.bulletin.service;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.tamudatathon.bulletin.data.entity.Challenge;
 import com.tamudatathon.bulletin.data.entity.Submission;
+import com.tamudatathon.bulletin.data.entity.User;
 import com.tamudatathon.bulletin.data.repository.ChallengeRepository;
 import com.tamudatathon.bulletin.data.repository.SubmissionRepository;
 import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
@@ -58,14 +60,20 @@ public class SubmissionService {
  
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public Submission addSubmission(Long eventId, Long challengeId, Long submissionId, Submission submission) throws EventNotFoundException,
+    public Submission addSubmission(Long eventId, Long challengeId, Long submissionId, Submission submission, User user) throws EventNotFoundException,
         ChallengeNotFoundException, SubmissionNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         submission.setChallenge(challenge);
         if (submissionId != null) {
-            this.submissionRepository.findById(submissionId)
+            Submission oldSubmission = this.submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new SubmissionNotFoundException(submissionId));
             submission.setSubmissionId(submissionId);
+            submission.setAccolades(oldSubmission.getAccolades());
+            submission.setUsers(oldSubmission.getUsers());
+        } else {
+            List<User> newUsers = new ArrayList<User>();
+            newUsers.add(user);
+            submission.setUsers(newUsers);
         }
         Submission newSubmission = this.submissionRepository.save(submission);
         return newSubmission;

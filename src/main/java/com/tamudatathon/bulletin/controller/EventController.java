@@ -117,7 +117,7 @@ public class EventController {
     private Event convertToEntity(EventDto eventDto) throws ParseException {
         Event event = modelMapper.map(eventDto, Event.class);
         event.setStartTime(eventDto.getStartTime());
-        event.setEndTime(eventDto.getEndTime()); 
+        event.setEndTime(eventDto.getEndTime());
         if (eventDto.getId() != null) {
             Event oldEvent = this.eventService.getEvent(eventDto.getId());
             event.setEventId(oldEvent.getEventId());

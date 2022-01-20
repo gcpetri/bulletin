@@ -9,6 +9,7 @@ public class AuthResponse implements Serializable {
     private String firstName;
     private String lastName;
     private Boolean isAdmin;
+    private String discordInfo;
 
     public String getAuthId() {
         return this.authId;
@@ -18,11 +19,11 @@ public class AuthResponse implements Serializable {
         this.authId = authId;
     }
 
-    public String getEmailId() {
+    public String getEmail() {
         return this.email;
     }
 
-    public void setEmailId(String email) {
+    public void setEmail(String email) {
         this.email = email;
     }
 
@@ -50,7 +51,11 @@ public class AuthResponse implements Serializable {
         this.isAdmin = isAdmin;
     }
 
-    public String toString() {
-        return this.authId;
+    public String getDiscordInfo() {
+        return this.discordInfo;
+    }
+
+    public void setDiscordInfo(String discordInfo) {
+        this.discordInfo = discordInfo;
     }
 }

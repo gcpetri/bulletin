@@ -19,6 +19,7 @@ public class SubmissionDto {
     private URL iconUrl;
     private String iconKey;
     private List<AccoladeDto> accolades = new ArrayList<>();
+    private List<UserDto> users = new ArrayList<>();
 
     public Long getId() {
         return this.id;
@@ -122,5 +123,13 @@ public class SubmissionDto {
 
     public void setAccolades(List<AccoladeDto> accolades) {
         this.accolades = accolades;
+    }
+
+    public List<UserDto> getUsers() {
+        return this.users;
+    }
+
+    public void setUsers(List<UserDto> users) {
+        this.users = users;
     }
 }

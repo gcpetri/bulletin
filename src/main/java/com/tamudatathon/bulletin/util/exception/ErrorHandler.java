@@ -38,6 +38,12 @@ public class ErrorHandler {
         return ce;
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public UserNotFoundException handleUserNotFoundException(UserNotFoundException ce) {
+        return ce;
+    }
+
     @ExceptionHandler(AccoladeInvalidException.class)
     @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
     public AccoladeInvalidException handleAccoladeInvalidException(AccoladeInvalidException ce) {
@@ -77,6 +83,24 @@ public class ErrorHandler {
     @ExceptionHandler(FileDeleteException.class)
     @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
     public FileDeleteException handleFileDeleteException(FileDeleteException ce) {
+        return ce;
+    }
+
+    @ExceptionHandler(ParticipantNotFoundException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ParticipantNotFoundException handleParticipantNotFoundException(ParticipantNotFoundException ce) {
+        return ce;
+    }
+
+    @ExceptionHandler(EditingForbiddenException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public EditingForbiddenException handleEditingForbiddenException(EditingForbiddenException ce) {
+        return ce;
+    }
+
+    @ExceptionHandler(LoginRedirectException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public LoginRedirectException handleLoginRedirectException(LoginRedirectException ce) {
         return ce;
     }
 }
