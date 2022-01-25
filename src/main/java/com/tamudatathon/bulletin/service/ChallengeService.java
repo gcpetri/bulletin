@@ -11,6 +11,7 @@ import com.tamudatathon.bulletin.data.repository.EventRepository;
 import com.tamudatathon.bulletin.util.exception.ChallengeInvalidException;
 import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
+import com.tamudatathon.bulletin.util.exception.FileUploadException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -121,6 +122,9 @@ public class ChallengeService {
     }
 
     public URL uploadImage(MultipartFile file, Long eventId, Long id) throws Exception, EventNotFoundException {
+        if (!file.getContentType().contains("image")) {
+            throw new FileUploadException("File is not an image");
+        }
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, id);
         if (challenge.getImageUrl() != null) {
             this.deleteImage(eventId, id);

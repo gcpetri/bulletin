@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +21,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import net.minidev.json.JSONObject;
-
 import com.tamudatathon.bulletin.data.dtos.EventDto;
+import com.tamudatathon.bulletin.data.dtos.ImageUploadResponseDto;
 import com.tamudatathon.bulletin.data.entity.Event;
 import com.tamudatathon.bulletin.service.EventService;
 import com.tamudatathon.bulletin.util.exception.EventInvalidException;
@@ -81,15 +81,17 @@ public class EventController {
     }
 
     @RequestMapping(value={"/{id}/image/save"},
-        method={RequestMethod.POST, RequestMethod.PUT})
+        method={RequestMethod.POST, RequestMethod.PUT},
+        consumes=MediaType.MULTIPART_FORM_DATA_VALUE,
+        produces=MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Object> uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long id) 
+    public ImageUploadResponseDto uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long id) 
         throws FileUploadException {
         try {
             URL url = this.eventService.uploadImage(file, id);
-            JSONObject resp = new JSONObject();
-            resp.put("url", url.toString());
-            return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+            ImageUploadResponseDto resp = new ImageUploadResponseDto();
+            resp.setUrl(url.toString());
+            return resp;
         } catch (Exception e) {
             throw new FileUploadException(e.getMessage());
         }
@@ -118,10 +120,6 @@ public class EventController {
         Event event = modelMapper.map(eventDto, Event.class);
         event.setStartTime(eventDto.getStartTime());
         event.setEndTime(eventDto.getEndTime());
-        if (eventDto.getId() != null) {
-            Event oldEvent = this.eventService.getEvent(eventDto.getId());
-            event.setEventId(oldEvent.getEventId());
-        }
         return event;
     }
 }

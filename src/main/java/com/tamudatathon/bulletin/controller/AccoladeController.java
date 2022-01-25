@@ -99,10 +99,6 @@ public class AccoladeController {
 
     private Accolade convertToEntity(AccoladeDto accoladeDto) throws ParseException {
         Accolade accolade = modelMapper.map(accoladeDto, Accolade.class);
-        if (accoladeDto.getId() != null) {
-            Accolade oldAccolade = this.accoladeService.getAccoladeById(accoladeDto.getId());
-            accolade.setAccoladeId(oldAccolade.getAccoladeId());
-        }
         return accolade;
     }
 }

@@ -76,7 +76,7 @@ public class Challenge {
     private List<Submission> submissions = new ArrayList<>();
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="EVENT_ID", referencedColumnName="EVENT_ID")
     private Event event;
 

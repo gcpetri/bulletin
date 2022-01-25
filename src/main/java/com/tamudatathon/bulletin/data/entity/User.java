@@ -1,14 +1,17 @@
 package com.tamudatathon.bulletin.data.entity;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
-import javax.persistence.OneToMany;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 import javax.persistence.JoinColumn;
 import javax.validation.constraints.NotBlank;
@@ -48,11 +51,11 @@ public class User {
     private Boolean isAdmin;
 
     @JsonIgnore
+    @ManyToMany(cascade=CascadeType.MERGE, fetch=FetchType.LAZY)
     @JoinTable(name="USER_SUBMISSIONS",
-        joinColumns=@JoinColumn(name="USER_ID"),
-        inverseJoinColumns=@JoinColumn(name="SUBMISSION_ID"))
-    @OneToMany
-    private List<Submission> submissions;
+        joinColumns=@JoinColumn(name="USER_ID", referencedColumnName="USER_ID"),
+        inverseJoinColumns=@JoinColumn(name="SUBMISSION_ID", referencedColumnName="SUBMISSION_ID"))
+    private Set<Submission> submissions = new HashSet<>();
 
     public Long getUserId() {
         return this.userId;
@@ -110,11 +113,29 @@ public class User {
         return this.isAdmin;
     }
 
-    public List<Submission> getSubmissions() {
+    public Set<Submission> getSubmissions() {
         return this.submissions;
     }
 
-    public void setSubmissions(List<Submission> submissions) {
+    public void setSubmissions(Set<Submission> submissions) {
         this.submissions = submissions;
+    }
+
+    public void addSubmission(Submission submission) {
+        if (this.submissions == null) this.submissions = new HashSet<>();
+        this.submissions.add(submission);
+    }
+
+    public void removeSubmission(Submission submission) {
+        if (this.submissions == null) this.submissions = new HashSet<>();
+        this.submissions.remove(submission);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User )) return false;
+        if (this.userId != null && this.userId.equals(((User) o).getUserId())) return true;
+        return this.authId != null && this.authId.equals(((User) o).getAuthId());
     }
 };

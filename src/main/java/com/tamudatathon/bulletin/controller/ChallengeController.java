@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.tamudatathon.bulletin.data.dtos.ChallengeDto;
+import com.tamudatathon.bulletin.data.dtos.ImageUploadResponseDto;
 import com.tamudatathon.bulletin.data.entity.Challenge;
 import com.tamudatathon.bulletin.service.ChallengeService;
 import com.tamudatathon.bulletin.util.exception.ChallengeInvalidException;
@@ -17,6 +18,7 @@ import com.tamudatathon.bulletin.util.exception.FileUploadException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +30,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import net.minidev.json.JSONObject;
 
 @RestController
 @RequestMapping("${app.api.basepath}/events/{eventId}/challenges")
@@ -84,16 +84,18 @@ public class ChallengeController {
     }
 
     @RequestMapping(value={"/{id}/image/save"},
-        method={RequestMethod.POST, RequestMethod.PUT})
+        method={RequestMethod.POST, RequestMethod.PUT},
+        consumes=MediaType.MULTIPART_FORM_DATA_VALUE,
+        produces=MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Object> uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long eventId,
+    public ImageUploadResponseDto uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long eventId,
         @PathVariable Long id) 
         throws FileUploadException {
         try {
             URL url = this.challengeService.uploadImage(file, eventId, id);
-            JSONObject resp = new JSONObject();
-            resp.put("url", url.toString());
-            return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+            ImageUploadResponseDto resp = new ImageUploadResponseDto();
+            resp.setUrl(url.toString());
+            return resp;
         } catch (Exception e) {
             throw new FileUploadException(e.getMessage());
         }
@@ -119,10 +121,6 @@ public class ChallengeController {
 
     private Challenge convertToEntity(ChallengeDto challengeDto) throws ParseException {
         Challenge challenge = modelMapper.map(challengeDto, Challenge.class);
-        if (challengeDto.getId() != null) {
-            Challenge oldChallenge = this.challengeService.getChallengeById(challengeDto.getId());
-            challenge.setChallengeId(oldChallenge.getChallengeId());
-        }
         return challenge;
     }
 

@@ -1,9 +1,12 @@
 package com.tamudatathon.bulletin.data.entity;
 
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
@@ -16,6 +19,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -23,7 +27,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.hibernate.annotations.DynamicUpdate;
 
 @Entity
@@ -74,22 +77,24 @@ public class Submission {
         orphanRemoval=false)
     private List<Accolade> accolades = new ArrayList<>();
 
-    @OneToMany(mappedBy="submission",
-        targetEntity=SubmissionQuestion.class,
-        cascade=CascadeType.ALL,
-        orphanRemoval=true)
-    private List<SubmissionQuestion> submissionQuestions = new ArrayList<>();
-
+    @ManyToMany(cascade=CascadeType.MERGE, fetch=FetchType.LAZY)
     @JoinTable(name="USER_SUBMISSIONS",
-        joinColumns=@JoinColumn(name="SUBMISSION_ID"),
-        inverseJoinColumns=@JoinColumn(name="USER_ID"))
-    @OneToMany
-    private List<User> users = new ArrayList<>();
+        joinColumns=@JoinColumn(name="SUBMISSION_ID", referencedColumnName="SUBMISSION_ID"),
+        inverseJoinColumns=@JoinColumn(name="USER_ID", referencedColumnName="USER_ID"))
+    private Set<User> users = new HashSet<>();
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="CHALLENGE_ID", referencedColumnName="CHALLENGE_ID")
     private Challenge challenge;
+
+    @Column(name="CREATED_ON", updatable=false)
+    private LocalDateTime createdOn;
+ 
+    @Column(name="UPDATED_ON")
+    private LocalDateTime updatedOn;
+
+    // getters and setters
 
     public Long getSubmissionId() {
         return this.submissionId;
@@ -175,24 +180,16 @@ public class Submission {
         return this.accolades;
     }
 
-    public void setUsers(List<User> users) {
+    public void setUsers(Set<User> users) {
         this.users = users;
     }
 
-    public List<User> getUsers() {
+    public Set<User> getUsers() {
         return this.users;
     }
 
     public void setAccolades(List<Accolade> accolades) {
         this.accolades = accolades;
-    }
-
-    public List<SubmissionQuestion> getSubmissionQuestions() {
-        return this.submissionQuestions;
-    }
-
-    public void setSubmissionQuestions(List<SubmissionQuestion> submissionQuestions) {
-        this.submissionQuestions = submissionQuestions;
     }
 
     public Challenge getChallenge() {
@@ -201,18 +198,6 @@ public class Submission {
 
     public void setChallenge(Challenge challenge) {
         this.challenge = challenge;
-    }
-
-    public void addSubmissionQuestion(SubmissionQuestion submissionQuestion) {
-        if (this.submissionQuestions == null) this.submissionQuestions = new ArrayList<>();
-        this.submissionQuestions.add(submissionQuestion);
-        submissionQuestion.setSubmission(this);
-    }
-
-    public void removeSubmissionQuestion(SubmissionQuestion submissionQuestion) {
-        if (this.submissionQuestions == null) this.submissionQuestions = new ArrayList<>();
-        this.submissionQuestions.remove(submissionQuestion);
-        submissionQuestion.setSubmission(null);
     }
 
     public void addAccolade(Accolade accolade) {
@@ -225,5 +210,33 @@ public class Submission {
         if (this.accolades == null) this.accolades = new ArrayList<>();
         this.accolades.remove(accolade);
         accolade.setSubmission(null);
+    }
+
+    public void addUser(User user) {
+        if (this.users == null) this.users = new HashSet<>();
+        this.users.add(user);
+        user.getSubmissions().add(this);
+    }
+
+    public void removeUser(User user) {
+        if (this.users == null) this.users = new HashSet<>();
+        this.users.remove(user);
+        user.getSubmissions().remove(this);
+    }
+
+    public LocalDateTime getCreatedOn() {
+        return createdOn;
+    }
+ 
+    public void setCreatedOn(LocalDateTime createdOn) {
+        this.createdOn = createdOn;
+    }
+ 
+    public LocalDateTime getUpdatedOn() {
+        return updatedOn;
+    }
+ 
+    public void setUpdatedOn(LocalDateTime updatedOn) {
+        this.updatedOn = updatedOn;
     }
 }

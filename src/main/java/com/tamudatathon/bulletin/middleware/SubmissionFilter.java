@@ -1,5 +1,9 @@
 package com.tamudatathon.bulletin.middleware;
 
+import java.io.IOException;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -9,14 +13,16 @@ import com.tamudatathon.bulletin.util.exception.EditingForbiddenException;
 import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.tamudatathon.bulletin.data.entity.Submission;
 import com.tamudatathon.bulletin.data.entity.User;
 
 @Component
-public class SubmissionInterceptor implements HandlerInterceptor {
+@Order(3)
+public class SubmissionFilter extends OncePerRequestFilter {
 
     @Autowired
     RestService restService;
@@ -25,12 +31,26 @@ public class SubmissionInterceptor implements HandlerInterceptor {
     SubmissionRepository submissionRepository;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse  response, Object handler) {
+    protected boolean shouldNotFilter(HttpServletRequest request)
+        throws ServletException {
+        String path = request.getRequestURI();
+        return !path.contains("/submissions");
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
         if (request.getMethod().equals("GET")) { // we don't care who GETs stuff
-            return true;
+            filterChain.doFilter(request, response);
+            return;
         }
+        
+        System.out.println("Filter: SubmissionFilter");
+
         if (request.getParameter("submissionId") == null) {
-            return true;
+            filterChain.doFilter(request, response);
+            return;
         }
         User user = (User) request.getAttribute("user");
         Long submissionId = Long.valueOf(request.getParameter("submissionId")).longValue();
@@ -39,6 +59,6 @@ public class SubmissionInterceptor implements HandlerInterceptor {
         if (!submission.getUsers().contains(user)) {
             throw new EditingForbiddenException("You not allowed to edit this submission");
         }
-        return true;
+        filterChain.doFilter(request, response);
     }
 }

@@ -2,7 +2,6 @@ package com.tamudatathon.bulletin.service;
 
 import com.tamudatathon.bulletin.data.entity.User;
 import com.tamudatathon.bulletin.data.repository.UserRepository;
-import com.tamudatathon.bulletin.middleware.AuthResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,25 +17,14 @@ public class UserService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public User findOrCreateUser(AuthResponse authResponse) {
-        User user = this.userRepository.findByAuthId(authResponse.getAuthId());
-        if (user == null) {
-            user = this.createUser(authResponse);
-        }
-        return user;
+    public User createUser(User user) {
+        return this.userRepository.save(user);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public User createUser(AuthResponse authResponse) {
-        User user = new User();
-        user.setAuthId(authResponse.getAuthId());
-        user.setFirstName(authResponse.getFirstName());
-        user.setLastName(authResponse.getLastName());
-        user.setEmail(authResponse.getEmail());
-        user.setIsAdmin(authResponse.getIsAdmin());
-        user.setDiscordInfo(authResponse.getDiscordInfo());
-        this.userRepository.save(user);
-        return user;
+    public User findUser(User user) {
+        if (user == null) return null;
+        return this.userRepository.findByAuthId(user.getAuthId());
     }
 }

@@ -1,15 +1,16 @@
-package com.tamudatathon.bulletin.middleware;
+package com.tamudatathon.bulletin.data.dtos;
 
-import java.io.Serializable;
-
-public class AuthResponse implements Serializable {
+public class AuthDto {
 
     private String authId;
+
     private String email;
+
     private String firstName;
+
     private String lastName;
+
     private Boolean isAdmin;
-    private String discordInfo;
 
     public String getAuthId() {
         return this.authId;
@@ -50,12 +51,5 @@ public class AuthResponse implements Serializable {
     public void setIsAdmin(Boolean isAdmin) {
         this.isAdmin = isAdmin;
     }
-
-    public String getDiscordInfo() {
-        return this.discordInfo;
-    }
-
-    public void setDiscordInfo(String discordInfo) {
-        this.discordInfo = discordInfo;
-    }
 }
+

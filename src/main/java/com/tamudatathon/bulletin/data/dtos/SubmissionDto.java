@@ -1,10 +1,15 @@
 package com.tamudatathon.bulletin.data.dtos;
 
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SubmissionDto {
+
+    private static final DateTimeFormatter dateFormatter = 
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private Long id;
     private String name;
@@ -15,11 +20,11 @@ public class SubmissionDto {
     private List<URL> links;
     private List<String> tags;
     private URL sourceCodeUrl;
-    private String sourceCodeKey;
     private URL iconUrl;
-    private String iconKey;
     private List<AccoladeDto> accolades = new ArrayList<>();
     private List<UserDto> users = new ArrayList<>();
+    private String createdOn;
+    private String updatedOn;
 
     public Long getId() {
         return this.id;
@@ -77,28 +82,12 @@ public class SubmissionDto {
         this.sourceCodeUrl = sourceCodeUrl;
     }
 
-    public String getSourceCodeKey() {
-        return this.sourceCodeKey;
-    }
-
-    public void setSourceCodeKey(String sourceCodeKey) {
-        this.sourceCodeKey = sourceCodeKey;
-    }
-
     public URL getIconUrl() {
         return this.iconUrl;
     }
 
     public void setIconUrl(URL iconUrl) {
         this.iconUrl = iconUrl;
-    }
-
-    public String getIconKey() {
-        return this.iconKey;
-    }
-
-    public void setIconKey(String iconKey) {
-        this.iconKey = iconKey;
     }
 
     public List<URL> getLinks() {
@@ -131,5 +120,21 @@ public class SubmissionDto {
 
     public void setUsers(List<UserDto> users) {
         this.users = users;
+    }
+
+    public String getCreatedOn() {
+        return this.createdOn;
+    }
+
+    public void setCreatedOn(LocalDateTime createdOn) {
+        this.createdOn = dateFormatter.format(createdOn);
+    }
+
+    public String getUpdatedOn() {
+        return this.updatedOn;
+    }
+
+    public void setUpdatedOn(LocalDateTime updatedOn) {
+        this.updatedOn = dateFormatter.format(updatedOn);
     }
 }

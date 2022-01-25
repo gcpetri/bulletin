@@ -7,6 +7,7 @@ import com.tamudatathon.bulletin.data.entity.Event;
 import com.tamudatathon.bulletin.data.repository.EventRepository;
 import com.tamudatathon.bulletin.util.exception.EventInvalidException;
 import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
+import com.tamudatathon.bulletin.util.exception.FileUploadException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,6 +66,9 @@ public class EventService {
     }
 
     public URL uploadImage(MultipartFile file, Long id) throws Exception, EventNotFoundException {
+        if (!file.getContentType().contains("image")) {
+            throw new FileUploadException("File is not an image");
+        }
         Event event = this.eventRepository.findById(id)
             .orElseThrow(() -> new EventNotFoundException(id));
         if (event.getImageUrl() != null) {

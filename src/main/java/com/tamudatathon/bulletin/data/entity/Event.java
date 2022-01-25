@@ -58,7 +58,7 @@ public class Event {
         targetEntity=Challenge.class,
         cascade=CascadeType.ALL,
         orphanRemoval=true,
-        fetch=FetchType.EAGER)
+        fetch=FetchType.LAZY)
     private List<Challenge> challenges = new ArrayList<>();
 
     public Long getEventId() {
@@ -129,9 +129,10 @@ public class Event {
         return this.challenges;
     }
 
+    /*
     public void setChallenges(List<Challenge> challenges) {
         this.challenges = challenges;
-    }
+    } */
 
     // utils
 

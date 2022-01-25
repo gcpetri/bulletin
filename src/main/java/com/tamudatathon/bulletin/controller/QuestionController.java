@@ -89,10 +89,6 @@ public class QuestionController {
 
     private Question convertToEntity(QuestionDto questionDto) throws ParseException {
         Question question = modelMapper.map(questionDto, Question.class);
-        if (questionDto.getId() != null) {
-            Question oldQuestion = this.questionService.getQuestionById(questionDto.getId());
-            question.setQuestionId(oldQuestion.getQuestionId());
-        }
         return question;
     }    
 }
