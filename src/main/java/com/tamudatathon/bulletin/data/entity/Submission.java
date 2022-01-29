@@ -28,6 +28,7 @@ import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Formula;
 
 @Entity
 @Table(name="SUBMISSIONS")
@@ -71,6 +72,10 @@ public class Submission {
     @Column(name="ICON_URL")
     private URL iconUrl;
 
+    @Column(name="NUM_LIKES")
+    @Formula(value = "(SELECT COUNT(*) FROM LIKES l WHERE l.SUBMISSION_ID=SUBMISSION_ID)")
+    private Long numLikes;
+
     @OneToMany(mappedBy="submission",
         targetEntity=Accolade.class,
         cascade=CascadeType.ALL,
@@ -87,6 +92,12 @@ public class Submission {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="CHALLENGE_ID", referencedColumnName="CHALLENGE_ID")
     private Challenge challenge;
+
+    @OneToMany(mappedBy="submission",
+        targetEntity=Comment.class,
+        cascade=CascadeType.ALL,
+        orphanRemoval=true)
+    private List<Comment> comments;
 
     @Column(name="CREATED_ON", updatable=false)
     private LocalDateTime createdOn;
@@ -176,8 +187,20 @@ public class Submission {
         this.tags = tags;
     }
 
+    public Long getNumLikes() {
+        return this.numLikes;
+    }
+
+    public void setNumLikes(Long numLikes) {
+        this.numLikes = numLikes;
+    }
+
     public List<Accolade> getAccolades() {
         return this.accolades;
+    }
+
+    public void setAccolades(List<Accolade> accolades) {
+        this.accolades = accolades;
     }
 
     public void setUsers(Set<User> users) {
@@ -188,8 +211,12 @@ public class Submission {
         return this.users;
     }
 
-    public void setAccolades(List<Accolade> accolades) {
-        this.accolades = accolades;
+    public List<Comment> getComments() {
+        return this.comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
     }
 
     public Challenge getChallenge() {
@@ -222,6 +249,12 @@ public class Submission {
         if (this.users == null) this.users = new HashSet<>();
         this.users.remove(user);
         user.getSubmissions().remove(this);
+    }
+
+    public void removeComment(Comment comment) {
+        if (this.comments == null) this.comments = new ArrayList<>();
+        this.comments.remove(comment);
+        comment.setSubmission(null);
     }
 
     public LocalDateTime getCreatedOn() {

@@ -26,4 +26,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "DELETE FROM USER_SUBMISSIONS WHERE USER_ID = ?1 AND SUBMISSION_ID = ?2", nativeQuery = true)
     @Transactional
     void deleteUserSubmission(Long userId, Long submissionId);
+
+    @Modifying
+    @Query(value = "INSERT INTO LIKES (USER_ID, SUBMISSION_ID) VALUES (?1, ?2)", nativeQuery = true)
+    void addLike(Long userId, Long submissionId);
+
+    @Modifying
+    @Query(value = "DELETE FROM LIKES WHERE USER_ID = ?1 AND SUBMISSION_ID = ?2", nativeQuery = true)
+    void deleteLike(Long userId, Long submissionId);
+
+    @Query(value = "SELECT COUNT(*) FROM LIKES WHERE USER_ID = ?1 AND SUBMISSION_ID = ?2", nativeQuery = true)
+    int getLike(Long userId, Long submissionId);
 }

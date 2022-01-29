@@ -38,7 +38,6 @@ import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,7 +51,6 @@ import org.json.JSONArray;
 public class SubmissionController {
     
     private final SubmissionService submissionService;
-    private final SubmissionQueryService submissionQueryService;
     private final ModelMapper modelMapper;
     private final PropertyMaps propertyMaps;
     
@@ -66,7 +64,6 @@ public class SubmissionController {
         this.propertyMaps = propertyMaps;
         this.modelMapper.addMappings(this.propertyMaps.getUserToDtoMap());
         this.modelMapper.addMappings(this.propertyMaps.getUserFromDtoMap());
-        this.submissionQueryService = submissionQueryService;
     }
 
     @GetMapping(value={"", "/", "/list"})
@@ -115,7 +112,7 @@ public class SubmissionController {
         consumes=MediaType.MULTIPART_FORM_DATA_VALUE,
         produces=MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public ImageUploadResponseDto uploadIcon(@RequestPart(value="icon") MultipartFile file, @PathVariable Long eventId,
+    public ImageUploadResponseDto uploadIcon(@RequestPart(value="file") MultipartFile file, @PathVariable Long eventId,
         @PathVariable Long challengeId, @PathVariable Long id) 
         throws FileUploadException {
         try {
@@ -124,6 +121,7 @@ public class SubmissionController {
             resp.setUrl(url.toString());
             return resp;
         } catch (Exception e) {
+            e.printStackTrace();
             throw new FileUploadException(e.getMessage());
         }
     }
@@ -145,7 +143,7 @@ public class SubmissionController {
         consumes=MediaType.MULTIPART_FORM_DATA_VALUE,
         produces=MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public ImageUploadResponseDto uploadSourceCode(@RequestPart(value = "source-code") MultipartFile file, @PathVariable Long eventId,
+    public ImageUploadResponseDto uploadSourceCode(@RequestPart(value="file") MultipartFile file, @PathVariable Long eventId,
         @PathVariable Long challengeId, @PathVariable Long id) 
         throws EventNotFoundException, ChallengeNotFoundException {
         try {
@@ -203,17 +201,6 @@ public class SubmissionController {
         List<User> users = this.submissionService.deleteUsers(eventId, challengeId, id, discordInfo, user);
         return ResponseEntity.status(HttpStatus.OK).body(users);
     }
-
-    // querying interface
-
-    /*
-    @GetMapping("/")
-    public List<SubmissionDto> getSubmissionByName(@RequestParam String name, @PathVariable Long eventId, 
-    @PathVariable Long challengeId) {
-        return this.submissionQueryService.getSubmissionsByName(eventId, challengeId, name)
-            .map(this::convertToDto)
-            .collect(Collectors.toList());
-    } */
 
     // utils
 

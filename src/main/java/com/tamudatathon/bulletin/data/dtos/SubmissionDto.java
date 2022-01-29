@@ -21,6 +21,8 @@ public class SubmissionDto {
     private List<String> tags;
     private URL sourceCodeUrl;
     private URL iconUrl;
+    private int numLikes;
+    private List<CommentDto> comments = new ArrayList<>();
     private List<AccoladeDto> accolades = new ArrayList<>();
     private List<UserDto> users = new ArrayList<>();
     private String createdOn;
@@ -90,6 +92,14 @@ public class SubmissionDto {
         this.iconUrl = iconUrl;
     }
 
+    public int getNumLikes() {
+        return this.numLikes;
+    }
+
+    public void setNumLikes(int numLikes) {
+        this.numLikes = numLikes;
+    }
+
     public List<URL> getLinks() {
         return this.links;
     }
@@ -104,6 +114,14 @@ public class SubmissionDto {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public List<CommentDto> getComments() {
+        return this.comments;
+    }
+
+    public void setComments(List<CommentDto> comments) {
+        this.comments = comments;
     }
 
     public List<AccoladeDto> getAccolades() {

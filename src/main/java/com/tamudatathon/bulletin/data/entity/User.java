@@ -1,6 +1,7 @@
 package com.tamudatathon.bulletin.data.entity;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -12,6 +13,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.JoinColumn;
 import javax.validation.constraints.NotBlank;
@@ -56,6 +58,13 @@ public class User {
         joinColumns=@JoinColumn(name="USER_ID", referencedColumnName="USER_ID"),
         inverseJoinColumns=@JoinColumn(name="SUBMISSION_ID", referencedColumnName="SUBMISSION_ID"))
     private Set<Submission> submissions = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy="user",
+        targetEntity=Comment.class,
+        cascade=CascadeType.ALL,
+        orphanRemoval=true)
+    private List<Comment> comments;
 
     public Long getUserId() {
         return this.userId;
@@ -111,6 +120,14 @@ public class User {
 
     public Boolean getIsAdmin() {
         return this.isAdmin;
+    }
+
+    public List<Comment> getComments() {
+        return this.comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
     }
 
     public Set<Submission> getSubmissions() {

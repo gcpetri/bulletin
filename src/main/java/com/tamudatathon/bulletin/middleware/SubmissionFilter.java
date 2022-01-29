@@ -34,7 +34,7 @@ public class SubmissionFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request)
         throws ServletException {
         String path = request.getRequestURI();
-        return !path.contains("/submissions");
+        return !(path.contains("/submissions") || path.contains("/comment") || path.contains("/like"));
     }
 
     @Override

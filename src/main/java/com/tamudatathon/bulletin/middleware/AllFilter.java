@@ -53,6 +53,7 @@ public class AllFilter extends OncePerRequestFilter {
         String accessToken = "";
         if (request.getCookies() == null) {
             try {
+                System.out.println("redirecting");
                 response.sendRedirect(this.redirectUrl);
                 return;
             } catch (IOException e) {
