@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Date;
 
@@ -49,11 +50,11 @@ public class AmazonService {
             .build();
     }
 
-    public URL uploadFile(MultipartFile multipartFile) 
-        throws Exception {
+    public URL uploadFile(MultipartFile multipartFile) throws IOException, URISyntaxException {
         File file = convertMultiPartToFile(multipartFile);
         String fileName = generateFileName(multipartFile);
-        URI fileUrl = new URI(endpointUrl + "/" + bucketName + "/" + fileName);
+        URI fileUrl;
+        fileUrl = new URI(endpointUrl + "/" + bucketName + "/" + fileName);
         uploadFileTos3bucket(fileName, file);
         file.delete();
         return fileUrl.toURL();

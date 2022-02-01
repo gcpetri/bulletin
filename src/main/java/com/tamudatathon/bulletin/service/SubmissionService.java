@@ -13,10 +13,8 @@ import com.tamudatathon.bulletin.data.entity.User;
 import com.tamudatathon.bulletin.data.repository.ChallengeRepository;
 import com.tamudatathon.bulletin.data.repository.SubmissionRepository;
 import com.tamudatathon.bulletin.data.repository.UserRepository;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.FileUploadException;
-import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
+import com.tamudatathon.bulletin.util.exception.S3Exception;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -49,35 +47,32 @@ public class SubmissionService {
         this.userRepository = userRepository;
     }
 
-    public List<Submission> getSubmissions(Long eventId, Long challengeId) throws EventNotFoundException,
-        ChallengeNotFoundException {
+    public List<Submission> getSubmissions(Long eventId, Long challengeId) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         return challenge.getSubmissions();
     }
 
-    public Submission getSubmission(Long eventId, Long challengeId, Long submissionId) throws EventNotFoundException,
-        ChallengeNotFoundException, SubmissionNotFoundException {
+    public Submission getSubmission(Long eventId, Long challengeId, Long submissionId) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         for (Submission submission : challenge.getSubmissions()) {
             if (submission.getSubmissionId() == submissionId) return submission;
         }
-        throw new SubmissionNotFoundException(submissionId);
+        throw new RecordNotFoundException("Submission", submissionId);
     }
 
-    public Submission getSubmissionById(Long id) throws SubmissionNotFoundException {
+    public Submission getSubmissionById(Long id) throws RecordNotFoundException {
         return this.submissionRepository.findById(id)
-            .orElseThrow(() -> new SubmissionNotFoundException(id));
+            .orElseThrow(() -> new RecordNotFoundException("Submission", id));
     }
  
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public Submission addSubmission(Long eventId, Long challengeId, Long submissionId, Submission submission, User user) throws EventNotFoundException,
-        ChallengeNotFoundException, SubmissionNotFoundException {
+    public Submission addSubmission(Long eventId, Long challengeId, Long submissionId, Submission submission, User user) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         submission.setChallenge(challenge);
         if (submissionId != null) {
             Submission oldSubmission = this.submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new SubmissionNotFoundException(submissionId));
+                .orElseThrow(() -> new RecordNotFoundException("Submission", submissionId));
             submission.setSubmissionId(submissionId);
             submission.setAccolades(oldSubmission.getAccolades());
             submission.setUsers(oldSubmission.getUsers());
@@ -93,8 +88,7 @@ public class SubmissionService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public void deleteSubmission(Long challengeId, Long eventId, Long submissionId) throws EventNotFoundException,
-        ChallengeNotFoundException, SubmissionNotFoundException {
+    public void deleteSubmission(Long challengeId, Long eventId, Long submissionId) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         for (Submission submission : challenge.getSubmissions()) {
             if (submission.getSubmissionId() == submissionId) {
@@ -104,21 +98,25 @@ public class SubmissionService {
                 return;
             }
         }
-	    throw new SubmissionNotFoundException(submissionId);
+	    throw new RecordNotFoundException("Submission", submissionId);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public URL uploadIcon(MultipartFile file, Long eventId, Long challengeId, Long id) throws Exception, 
-        EventNotFoundException, ChallengeNotFoundException, SubmissionNotFoundException {
+    public URL uploadIcon(MultipartFile file, Long eventId, Long challengeId, Long id) throws RecordNotFoundException, S3Exception {
         if (!file.getContentType().contains("image")) {
-            throw new FileUploadException("File is not an image");
+            throw new S3Exception("Uploading", "File is not an image");
         }
         Submission submission = this.commonService.validEventChallengeSubmission(eventId, challengeId, id);
         if (submission.getIconUrl() != null) {
             this.deleteIcon(eventId, challengeId, id);
         }
-        URL fileUrl = this.amazonService.uploadFile(file);
+        URL fileUrl;
+        try {
+            fileUrl = this.amazonService.uploadFile(file);
+        } catch (Exception e) {
+            throw new S3Exception("Uploading", e.getMessage());
+        }
         submission.setIconUrl(fileUrl);
         this.submissionRepository.save(submission);
         return fileUrl;
@@ -126,7 +124,7 @@ public class SubmissionService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public void deleteIcon(Long eventId, Long challengeId, Long id) throws Exception, EventNotFoundException {
+    public void deleteIcon(Long eventId, Long challengeId, Long id) throws RecordNotFoundException {
         Submission submission = this.commonService.validEventChallengeSubmission(eventId, challengeId, id);
         this.amazonService.deleteFileFromS3Bucket(submission.getIconUrl());
         submission.setIconUrl(null);
@@ -135,16 +133,20 @@ public class SubmissionService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public URL uploadSourceCode(MultipartFile file, Long eventId, Long challengeId, Long id) throws Exception, 
-        EventNotFoundException, ChallengeNotFoundException, SubmissionNotFoundException {
+    public URL uploadSourceCode(MultipartFile file, Long eventId, Long challengeId, Long id) throws RecordNotFoundException, S3Exception {
         Submission submission = this.commonService.validEventChallengeSubmission(eventId, challengeId, id);
         if (!file.getOriginalFilename().endsWith(".zip") && !file.getOriginalFilename().endsWith(".tar")) {
-            throw new FileUploadException("source code must be a zip or tar file");
+            throw new S3Exception("Uploading", "source code must be a zip or tar file");
         }
         if (submission.getSourceCodeUrl() != null) {
             this.deleteSourceCode(eventId, challengeId, id);
         }
-        URL fileUrl = this.amazonService.uploadFile(file);
+        URL fileUrl;
+        try {
+            fileUrl = this.amazonService.uploadFile(file);
+        } catch (Exception e) {
+            throw new S3Exception("Uploading", e.getMessage());
+        }
         submission.setSourceCodeUrl(fileUrl);
         this.submissionRepository.save(submission);
         return fileUrl;
@@ -152,7 +154,7 @@ public class SubmissionService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public void deleteSourceCode(Long eventId, Long challengeId, Long id) throws Exception, EventNotFoundException {
+    public void deleteSourceCode(Long eventId, Long challengeId, Long id) throws RecordNotFoundException {
         Submission submission = this.commonService.validEventChallengeSubmission(eventId, challengeId, id);
         this.amazonService.deleteFileFromS3Bucket(submission.getSourceCodeUrl());
         submission.setSourceCodeUrl(null);

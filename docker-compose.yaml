@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+  app:
+    image: 'bulletin:latest'
+    build:
+      context: .
+    ports:
+      - 8080:8080
+    container_name: app
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      - SPRING_JPA_DATABASE-PLATFORM=${SPRING_JPA_DATABASE-PLATFORM}
+          
+  db:
+    image: 'postgres:13.1-alpine'
+    container_name: bulletin-db
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

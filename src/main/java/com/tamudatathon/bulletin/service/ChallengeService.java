@@ -8,10 +8,9 @@ import com.tamudatathon.bulletin.data.entity.Challenge;
 import com.tamudatathon.bulletin.data.entity.Event;
 import com.tamudatathon.bulletin.data.repository.ChallengeRepository;
 import com.tamudatathon.bulletin.data.repository.EventRepository;
-import com.tamudatathon.bulletin.util.exception.ChallengeInvalidException;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.FileUploadException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
+import com.tamudatathon.bulletin.util.exception.S3Exception;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,41 +44,39 @@ public class ChallengeService {
         this.amazonService = amazonService;
     }
 
-    public List<Challenge> getChallenges(Long eventId) throws EventNotFoundException {
+    public List<Challenge> getChallenges(Long eventId) throws RecordNotFoundException {
         Event event = this.commonService.validEvent(eventId);
         return event.getChallenges();
     }
 
-    public Challenge getChallenge(Long eventId, Long challengeId) throws EventNotFoundException,
-        ChallengeNotFoundException {
+    public Challenge getChallenge(Long eventId, Long challengeId) throws RecordNotFoundException {
         Event event = this.commonService.validEvent(eventId);
         for (Challenge challenge : event.getChallenges()) {
             if (challenge.getChallengeId() == challengeId) return challenge;
         }
-        throw new ChallengeNotFoundException(challengeId);
+        throw new RecordNotFoundException("Challenge", challengeId);
     }
 
-    public Challenge getChallengeById(Long challengeId) throws ChallengeNotFoundException {
+    public Challenge getChallengeById(Long challengeId) throws RecordNotFoundException {
         return this.challengeRepository.findById(challengeId)
-            .orElseThrow(() -> new ChallengeNotFoundException(challengeId));
+            .orElseThrow(() -> new RecordNotFoundException("Challenge", challengeId));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public Challenge addChallenge(Long eventId, Long challengeId, Challenge challenge) throws EventNotFoundException,
-        ChallengeNotFoundException {
+    public Challenge addChallenge(Long eventId, Long challengeId, Challenge challenge) throws RecordNotFoundException {
         Event event = this.commonService.validEvent(eventId);
         challenge.setEvent(event);
         int oldNumPlaces = 0;
         if (!this.commonService.validHexColor(challenge.getColor())) {
-            throw new ChallengeInvalidException("color is not a 6-digit hex code");
+            throw new RecordFormatInvalidException("color is not a 6-digit hex code");
         }
         if (challenge.getNumPlaces() > this.maxPlaces) {
-            throw new ChallengeInvalidException("The max number of places is " + this.maxPlaces);
+            throw new RecordFormatInvalidException("The max number of challenge places is " + this.maxPlaces);
         }
         if (challengeId != null) {
             Challenge oldChallenge = this.challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new ChallengeNotFoundException(challengeId));
+                .orElseThrow(() -> new RecordNotFoundException("Challenge", challengeId));
             challenge.setChallengeId(challengeId);
             oldNumPlaces = oldChallenge.getNumPlaces();
             challenge.setAccolades(oldChallenge.getAccolades());
@@ -118,24 +115,29 @@ public class ChallengeService {
                 return;
             }
         }
-        throw new ChallengeNotFoundException(challengeId);
+        throw new RecordNotFoundException("Challenge", challengeId);
     }
 
-    public URL uploadImage(MultipartFile file, Long eventId, Long id) throws Exception, EventNotFoundException {
+    public URL uploadImage(MultipartFile file, Long eventId, Long id) throws RecordNotFoundException, S3Exception {
         if (!file.getContentType().contains("image")) {
-            throw new FileUploadException("File is not an image");
+            throw new S3Exception("Uploading", "File is not an image");
         }
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, id);
         if (challenge.getImageUrl() != null) {
             this.deleteImage(eventId, id);
         }
-        URL fileUrl = this.amazonService.uploadFile(file);
+        URL fileUrl;
+        try {
+            fileUrl = this.amazonService.uploadFile(file);
+        } catch (Exception e) {
+            throw new S3Exception("Uploading", e.getMessage());
+        }
         challenge.setImageUrl(fileUrl);
         this.challengeRepository.save(challenge);
         return fileUrl;
     }
 
-    public void deleteImage(Long eventId, Long id) throws Exception, EventNotFoundException {
+    public void deleteImage(Long eventId, Long id) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, id);
         this.amazonService.deleteFileFromS3Bucket(challenge.getImageUrl());
         challenge.setImageUrl(null);

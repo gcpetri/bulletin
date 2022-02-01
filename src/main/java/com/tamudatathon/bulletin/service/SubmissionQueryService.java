@@ -1,12 +1,12 @@
 package com.tamudatathon.bulletin.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.tamudatathon.bulletin.data.entity.Submission;
 import com.tamudatathon.bulletin.data.repository.ChallengeRepository;
 import com.tamudatathon.bulletin.data.repository.SubmissionRepository;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,7 @@ public class SubmissionQueryService {
     public List<Submission> getSubmissionsByName(Long eventId, String name) {
         List<Long> challengeIds = this.challengeRepository.findChallengeIdsByEvent(eventId);
         if (challengeIds.size() == 0) {
-            throw new EventNotFoundException(eventId);
+            return new ArrayList<>();
         }
         List<Submission> submissions = this.submissionRepository.findByNameIgnoreCaseContaining(name);
         return submissions

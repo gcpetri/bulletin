@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import com.tamudatathon.bulletin.data.repository.SubmissionRepository;
 import com.tamudatathon.bulletin.service.RestService;
 import com.tamudatathon.bulletin.util.exception.EditingForbiddenException;
-import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
@@ -55,7 +55,7 @@ public class SubmissionFilter extends OncePerRequestFilter {
         User user = (User) request.getAttribute("user");
         Long submissionId = Long.valueOf(request.getParameter("submissionId")).longValue();
         Submission submission = this.submissionRepository.findById(submissionId)
-            .orElseThrow(() -> new SubmissionNotFoundException(submissionId));
+            .orElseThrow(() -> new RecordNotFoundException("Submission", submissionId));
         if (!submission.getUsers().contains(user)) {
             throw new EditingForbiddenException("You not allowed to edit this submission");
         }

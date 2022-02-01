@@ -5,7 +5,8 @@ import java.net.URISyntaxException;
 import com.tamudatathon.bulletin.data.dtos.AuthDto;
 import com.tamudatathon.bulletin.data.dtos.HarmoniaDto;
 import com.tamudatathon.bulletin.data.entity.User;
-import com.tamudatathon.bulletin.util.exception.ParticipantNotFoundException;
+import com.tamudatathon.bulletin.util.exception.EditingForbiddenException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,7 +50,7 @@ public class RestService {
             requestEntity, AuthDto.class);
         
         if (response.getStatusCode() != HttpStatus.OK) {
-            throw new ParticipantNotFoundException("Valid accessToken missing");
+            throw new EditingForbiddenException("Valid accessToken missing");
         }
 
         AuthDto authDto = response.getBody();
@@ -71,7 +72,7 @@ public class RestService {
         ResponseEntity<HarmoniaDto> response = this.getRestTemplate().exchange(this.harmoniaUrl + "?userAuthId=" + authId,
             HttpMethod.GET, requestEntity, HarmoniaDto.class);
         if (response.getStatusCode() != HttpStatus.OK) {
-            throw new ParticipantNotFoundException("User is not in the discord guild");
+            throw new RecordFormatInvalidException("User with authId=" + authId + " not found in the discord guild");
         }
 
         HarmoniaDto harmoniaDto = response.getBody();
@@ -82,7 +83,7 @@ public class RestService {
         ResponseEntity<HarmoniaDto> response = this.getRestTemplate().exchange(this.harmoniaUrl + "?discordInfo=" + discordInfo,
             HttpMethod.GET, requestEntity, HarmoniaDto.class);
         if (response.getStatusCode() != HttpStatus.OK) {
-            throw new ParticipantNotFoundException(discordInfo + " is not in the discord guild");
+            throw new RecordFormatInvalidException("User with discordInfo=" + discordInfo + " is not found in the discord guild");
         }
         
         HarmoniaDto harmoniaDto = response.getBody();
@@ -101,7 +102,7 @@ public class RestService {
         AuthDto authDto = response.getBody();
 
         if (!authId.equals(authDto.getAuthId())) { // sanity check
-            throw new ParticipantNotFoundException("user authId mismatch");
+            throw new RecordFormatInvalidException("user authId mismatch");
         }
 
         User user = new User();

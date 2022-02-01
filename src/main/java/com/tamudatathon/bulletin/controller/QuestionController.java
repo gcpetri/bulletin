@@ -7,10 +7,8 @@ import java.util.stream.Collectors;
 import com.tamudatathon.bulletin.data.dtos.QuestionDto;
 import com.tamudatathon.bulletin.data.entity.Question;
 import com.tamudatathon.bulletin.service.QuestionService;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.QuestionInvalidException;
-import com.tamudatathon.bulletin.util.exception.QuestionNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,7 +39,7 @@ public class QuestionController {
 
     @GetMapping(value={"", "/", "/list"})
     public List<QuestionDto> getQuestions(@PathVariable Long eventId, @PathVariable Long challengeId)
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws RecordNotFoundException {
         List<Question> questions = this.questionService.getQuestions(eventId, challengeId);
         return questions.stream()
           .map(this::convertToDto)
@@ -50,7 +48,7 @@ public class QuestionController {
 
     @GetMapping("/{id}")
     public QuestionDto getQuestionById(@PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable Long id) throws QuestionNotFoundException, ChallengeNotFoundException, EventNotFoundException {
+        @PathVariable Long id) throws RecordNotFoundException {
         Question question = this.questionService.getQuestion(eventId, challengeId, id);
         return convertToDto(question);
     }
@@ -58,7 +56,7 @@ public class QuestionController {
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<Object> deleteQuestion(@PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable Long id) throws QuestionNotFoundException, ChallengeNotFoundException, EventNotFoundException {
+        @PathVariable Long id) throws RecordNotFoundException {
         this.questionService.deleteQuestion(eventId, challengeId, id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -68,15 +66,14 @@ public class QuestionController {
     @ResponseStatus(HttpStatus.CREATED)
     public QuestionDto createQuestion(@RequestBody QuestionDto questionDto,
         @PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable(required=false) Long id) throws ChallengeNotFoundException, EventNotFoundException,
-        QuestionNotFoundException, QuestionInvalidException {
+        @PathVariable(required=false) Long id) throws RecordNotFoundException, RecordFormatInvalidException {
         try {
             Question question = this.convertToEntity(questionDto);
             Question newQuestion = this.questionService.addQuestion(eventId, challengeId, id, question);
             return convertToDto(newQuestion);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new QuestionInvalidException();
+            throw new RecordFormatInvalidException(e.getMessage());
         }
     }
 

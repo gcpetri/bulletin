@@ -18,12 +18,9 @@ import com.tamudatathon.bulletin.data.entity.Submission;
 import com.tamudatathon.bulletin.data.entity.User;
 import com.tamudatathon.bulletin.service.SubmissionQueryService;
 import com.tamudatathon.bulletin.service.SubmissionService;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.FileDeleteException;
-import com.tamudatathon.bulletin.util.exception.FileUploadException;
-import com.tamudatathon.bulletin.util.exception.SubmissionInvalidException;
-import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
+import com.tamudatathon.bulletin.util.exception.S3Exception;
 
 import org.json.JSONException;
 import org.modelmapper.ModelMapper;
@@ -68,7 +65,7 @@ public class SubmissionController {
 
     @GetMapping(value={"", "/", "/list"})
     public List<SubmissionDto> getSubmissions(@PathVariable Long eventId, @PathVariable Long challengeId)
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws RecordNotFoundException {
         List<Submission> submissions = this.submissionService.getSubmissions(eventId, challengeId);
         return submissions.stream()
           .map(this::convertToDto)
@@ -77,7 +74,7 @@ public class SubmissionController {
 
     @GetMapping("/{id}")
     public SubmissionDto getSubmissionById(@PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable Long id) throws SubmissionNotFoundException, ChallengeNotFoundException, EventNotFoundException {
+        @PathVariable Long id) throws RecordNotFoundException {
         Submission submission = this.submissionService.getSubmission(eventId, challengeId, id);
         return convertToDto(submission);
     }
@@ -85,7 +82,7 @@ public class SubmissionController {
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<Object> deleteSubmission(@PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable Long id) throws SubmissionNotFoundException, ChallengeNotFoundException, EventNotFoundException {
+        @PathVariable Long id) throws RecordNotFoundException {
         this.submissionService.deleteSubmission(eventId, challengeId, id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -95,15 +92,14 @@ public class SubmissionController {
     @ResponseStatus(HttpStatus.CREATED)
     public SubmissionDto createSubmission(@RequestAttribute("user") User user, @RequestBody SubmissionDto submissionDto,
         @PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable(required=false) Long id) throws ChallengeNotFoundException, EventNotFoundException,
-        SubmissionNotFoundException, SubmissionInvalidException {
+        @PathVariable(required=false) Long id) throws RecordNotFoundException, RecordFormatInvalidException {
         try {
             Submission submission = this.convertToEntity(submissionDto);
             Submission newSubmission = this.submissionService.addSubmission(eventId, challengeId, id, submission, user);
             return convertToDto(newSubmission);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new SubmissionInvalidException(e.getMessage());
+            throw new RecordFormatInvalidException(e.getMessage());
         }
     }
 
@@ -114,28 +110,19 @@ public class SubmissionController {
     @ResponseStatus(HttpStatus.CREATED)
     public ImageUploadResponseDto uploadIcon(@RequestPart(value="file") MultipartFile file, @PathVariable Long eventId,
         @PathVariable Long challengeId, @PathVariable Long id) 
-        throws FileUploadException {
-        try {
-            URL url = this.submissionService.uploadIcon(file, eventId, challengeId, id);
-            ImageUploadResponseDto resp = new ImageUploadResponseDto();
-            resp.setUrl(url.toString());
-            return resp;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new FileUploadException(e.getMessage());
-        }
+        throws S3Exception, RecordNotFoundException {
+        URL url = this.submissionService.uploadIcon(file, eventId, challengeId, id);
+        ImageUploadResponseDto resp = new ImageUploadResponseDto();
+        resp.setUrl(url.toString());
+        return resp;
     }
 
     @DeleteMapping("/{id}/icon/delete")
     public ResponseEntity<Object> deleteIcon(@PathVariable Long eventId, 
         @PathVariable Long challengeId, @PathVariable Long id) 
-        throws FileDeleteException {
-        try {
-            this.submissionService.deleteIcon(eventId, challengeId, id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (Exception e) {
-            throw new FileDeleteException(e.getMessage());
-        }
+        throws S3Exception, RecordNotFoundException {
+        this.submissionService.deleteIcon(eventId, challengeId, id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @RequestMapping(value={"/{id}/source-code/save"},
@@ -145,27 +132,19 @@ public class SubmissionController {
     @ResponseStatus(HttpStatus.CREATED)
     public ImageUploadResponseDto uploadSourceCode(@RequestPart(value="file") MultipartFile file, @PathVariable Long eventId,
         @PathVariable Long challengeId, @PathVariable Long id) 
-        throws EventNotFoundException, ChallengeNotFoundException {
-        try {
-            URL url = this.submissionService.uploadSourceCode(file, eventId, challengeId, id);
-            ImageUploadResponseDto resp = new ImageUploadResponseDto();
-            resp.setUrl(url.toString());
-            return resp;
-        } catch (Exception e) {
-            throw new FileUploadException(e.getMessage());
-        }
+        throws RecordNotFoundException, S3Exception {
+        URL url = this.submissionService.uploadSourceCode(file, eventId, challengeId, id);
+        ImageUploadResponseDto resp = new ImageUploadResponseDto();
+        resp.setUrl(url.toString());
+        return resp;
     }
 
     @DeleteMapping("/{id}/source-code/delete")
     public ResponseEntity<Object> deleteSourceCode(@PathVariable Long eventId, 
         @PathVariable Long challengeId, @PathVariable Long id) 
-        throws FileDeleteException {
-        try {
-            this.submissionService.deleteSourceCode(eventId, challengeId, id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (Exception e) {
-            throw new FileDeleteException(e.getMessage());
-        }
+        throws S3Exception, RecordNotFoundException {
+        this.submissionService.deleteSourceCode(eventId, challengeId, id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     @RequestMapping(value={"/{id}/users/add"},
@@ -173,7 +152,7 @@ public class SubmissionController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Object> addUsers(@PathVariable Long eventId,
         @PathVariable Long challengeId, @PathVariable Long id, HttpServletRequest request) 
-        throws EventNotFoundException, ChallengeNotFoundException, JSONException, IOException {
+        throws RecordNotFoundException, JSONException, IOException {
         String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
         body = body.replace('#', '\u00A3');
         JSONObject obj = new JSONObject(body);
@@ -189,7 +168,7 @@ public class SubmissionController {
     @DeleteMapping("/{id}/users/delete")
     public ResponseEntity<Object> deleteUsers(@RequestAttribute("user") User user, @PathVariable Long eventId, 
         @PathVariable Long challengeId, @PathVariable Long id, HttpServletRequest request) 
-        throws EventNotFoundException, ChallengeNotFoundException, SubmissionNotFoundException, JSONException, IOException {
+        throws RecordNotFoundException, JSONException, IOException {
         String body = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
         body = body.replace('#', '\u00A3');
         JSONObject obj = new JSONObject(body);

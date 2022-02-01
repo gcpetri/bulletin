@@ -6,9 +6,8 @@ import com.tamudatathon.bulletin.data.entity.Challenge;
 import com.tamudatathon.bulletin.data.entity.Question;
 import com.tamudatathon.bulletin.data.repository.ChallengeRepository;
 import com.tamudatathon.bulletin.data.repository.QuestionRepository;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.QuestionNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,35 +30,33 @@ public class QuestionService {
         this.commonService = commonService;
     }
 
-    public List<Question> getQuestions(Long eventId, Long challengeId) throws EventNotFoundException,
-        ChallengeNotFoundException {
+    public List<Question> getQuestions(Long eventId, Long challengeId) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         return challenge.getQuestions();
     }
 
-    public Question getQuestion(Long eventId, Long challengeId, Long questionId) throws EventNotFoundException,
-        ChallengeNotFoundException, QuestionNotFoundException {
+    public Question getQuestion(Long eventId, Long challengeId, Long questionId) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         for (Question question : challenge.getQuestions()) {
             if (question.getQuestionId() == questionId) return question;
         }
-        throw new QuestionNotFoundException(questionId);
+        throw new RecordNotFoundException("Question", questionId);
     }
 
-    public Question getQuestionById(Long id) throws QuestionNotFoundException {
+    public Question getQuestionById(Long id) throws RecordNotFoundException {
         return this.questionRepository.findById(id)
-            .orElseThrow(() -> new QuestionNotFoundException(id));
+            .orElseThrow(() -> new RecordNotFoundException("Question", id));
     }
  
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public Question addQuestion(Long eventId, Long challengeId, Long questionId, Question question) throws EventNotFoundException,
-        ChallengeNotFoundException, QuestionNotFoundException {
+    public Question addQuestion(Long eventId, Long challengeId, Long questionId, Question question) throws RecordNotFoundException,
+        RecordFormatInvalidException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         question.setChallenge(challenge);
         if (questionId != null) {
             this.questionRepository.findById(questionId)
-                .orElseThrow(() -> new QuestionNotFoundException(questionId));
+                .orElseThrow(() -> new RecordNotFoundException("Question", questionId));
             question.setQuestionId(questionId);
         }
         Question newQuestion = this.questionRepository.save(question);
@@ -68,8 +65,7 @@ public class QuestionService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW,
         rollbackFor = Exception.class)
-    public void deleteQuestion(Long challengeId, Long eventId, Long questionId) throws EventNotFoundException,
-        ChallengeNotFoundException, QuestionNotFoundException {
+    public void deleteQuestion(Long challengeId, Long eventId, Long questionId) throws RecordNotFoundException {
         Challenge challenge = this.commonService.validEventAndChallenge(eventId, challengeId);
         for (Question question : challenge.getQuestions()) {
             if (question.getQuestionId() == questionId) {
@@ -79,7 +75,7 @@ public class QuestionService {
                 return;
             }
         }
-	    throw new QuestionNotFoundException(questionId);
+	    throw new RecordNotFoundException("Question", questionId);
     }
 }
 

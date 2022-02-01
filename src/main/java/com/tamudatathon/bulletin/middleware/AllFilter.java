@@ -7,7 +7,7 @@ import com.tamudatathon.bulletin.data.entity.User;
 import com.tamudatathon.bulletin.service.RestService;
 import com.tamudatathon.bulletin.service.UserService;
 import com.tamudatathon.bulletin.util.exception.LoginRedirectException;
-import com.tamudatathon.bulletin.util.exception.ParticipantNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -92,7 +92,7 @@ public class AllFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
-            throw new ParticipantNotFoundException(e.getMessage());
+            throw new RecordFormatInvalidException(e.getMessage());
         }
         
     }

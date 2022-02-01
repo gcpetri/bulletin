@@ -9,11 +9,9 @@ import com.tamudatathon.bulletin.data.dtos.ChallengeDto;
 import com.tamudatathon.bulletin.data.dtos.ImageUploadResponseDto;
 import com.tamudatathon.bulletin.data.entity.Challenge;
 import com.tamudatathon.bulletin.service.ChallengeService;
-import com.tamudatathon.bulletin.util.exception.ChallengeInvalidException;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.FileDeleteException;
-import com.tamudatathon.bulletin.util.exception.FileUploadException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
+import com.tamudatathon.bulletin.util.exception.S3Exception;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +44,7 @@ public class ChallengeController {
     } 
 
     @GetMapping(value={"", "/", "/list"})
-    public List<ChallengeDto> getChallenges(@PathVariable Long eventId) throws EventNotFoundException {
+    public List<ChallengeDto> getChallenges(@PathVariable Long eventId) throws RecordNotFoundException {
         List<Challenge> challenges =this.challengeService.getChallenges(eventId);
         return challenges.stream()
             .map(this::convertToDto)
@@ -55,7 +53,7 @@ public class ChallengeController {
 
     @GetMapping("/{id}")
     public ChallengeDto getChallengeById(@PathVariable Long eventId, @PathVariable Long id) 
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws RecordNotFoundException {
         Challenge challenge = this.challengeService.getChallenge(eventId, id);
         return this.convertToDto(challenge);
     }
@@ -63,7 +61,7 @@ public class ChallengeController {
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<Object> deleteChallenge(@PathVariable Long eventId, @PathVariable Long id)
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws RecordNotFoundException {
         this.challengeService.deleteChallenge(eventId, id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -72,14 +70,14 @@ public class ChallengeController {
         method={RequestMethod.POST, RequestMethod.PUT})
     @ResponseStatus(HttpStatus.CREATED)
     public ChallengeDto createChallenge(@RequestBody ChallengeDto challengeDto,
-        @PathVariable Long eventId, @PathVariable(required=false) Long id) throws ChallengeNotFoundException, EventNotFoundException {
+        @PathVariable Long eventId, @PathVariable(required=false) Long id) throws RecordNotFoundException {
         try {
             Challenge challenge = convertToEntity(challengeDto);
             Challenge newChallenge = this.challengeService.addChallenge(eventId, id, challenge);
             return convertToDto(newChallenge);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ChallengeInvalidException(e.getMessage());
+            throw new RecordFormatInvalidException(e.getMessage());
         }
     }
 
@@ -90,26 +88,18 @@ public class ChallengeController {
     @ResponseStatus(HttpStatus.CREATED)
     public ImageUploadResponseDto uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long eventId,
         @PathVariable Long id) 
-        throws FileUploadException {
-        try {
-            URL url = this.challengeService.uploadImage(file, eventId, id);
-            ImageUploadResponseDto resp = new ImageUploadResponseDto();
-            resp.setUrl(url.toString());
-            return resp;
-        } catch (Exception e) {
-            throw new FileUploadException(e.getMessage());
-        }
+        throws S3Exception, RecordNotFoundException {
+        URL url = this.challengeService.uploadImage(file, eventId, id);
+        ImageUploadResponseDto resp = new ImageUploadResponseDto();
+        resp.setUrl(url.toString());
+        return resp;
     }
 
     @DeleteMapping("/{id}/image/delete")
     public ResponseEntity<Object> deleteImage(@PathVariable Long eventId, @PathVariable Long id) 
-        throws FileDeleteException {
-        try {
-            this.challengeService.deleteImage(eventId, id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (Exception e) {
-            throw new FileDeleteException(e.getMessage());
-        }
+        throws S3Exception, RecordNotFoundException {
+        this.challengeService.deleteImage(eventId, id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     // utils

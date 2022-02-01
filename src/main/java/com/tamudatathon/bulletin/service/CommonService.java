@@ -10,9 +10,7 @@ import com.tamudatathon.bulletin.data.entity.Challenge;
 import com.tamudatathon.bulletin.data.entity.Event;
 import com.tamudatathon.bulletin.data.entity.Submission;
 import com.tamudatathon.bulletin.data.repository.EventRepository;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,27 +29,27 @@ public class CommonService {
     }
 
     public Submission validEventChallengeSubmission(Long eventId, Long challengeId, 
-        Long submissionId) throws EventNotFoundException, ChallengeNotFoundException, SubmissionNotFoundException {
+        Long submissionId) throws RecordNotFoundException {
         Challenge challenge = this.validEventAndChallenge(eventId, challengeId);
         for (Submission submission : challenge.getSubmissions()) {
             if (submission.getSubmissionId() == submissionId) return submission;
         }
-        throw new SubmissionNotFoundException(submissionId);
+        throw new RecordNotFoundException("Submission", submissionId);
     }
 
     public Challenge validEventAndChallenge (Long eventId, Long challengeId)
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws RecordNotFoundException {
         Event event = this.eventRepository.findById(eventId)
-            .orElseThrow(() -> new EventNotFoundException(eventId));
+            .orElseThrow(() -> new RecordNotFoundException("Event", eventId));
         for (Challenge challenge : event.getChallenges()) {
             if (challenge.getChallengeId() == challengeId) return challenge;
         }
-        throw new ChallengeNotFoundException(challengeId);
+        throw new RecordNotFoundException("Challenge", challengeId);
     }
 
-    public Event validEvent(Long eventId) throws EventNotFoundException {
+    public Event validEvent(Long eventId) throws RecordNotFoundException {
         return this.eventRepository.findById(eventId)
-            .orElseThrow(() -> new EventNotFoundException(eventId));
+            .orElseThrow(() -> new RecordNotFoundException("Event", eventId));
     }
 
     public String ordinalSuffixOf(int i) {

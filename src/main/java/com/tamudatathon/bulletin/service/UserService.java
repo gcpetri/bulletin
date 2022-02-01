@@ -7,8 +7,8 @@ import com.tamudatathon.bulletin.data.entity.Submission;
 import com.tamudatathon.bulletin.data.entity.User;
 import com.tamudatathon.bulletin.data.repository.CommentRepository;
 import com.tamudatathon.bulletin.data.repository.UserRepository;
-import com.tamudatathon.bulletin.util.exception.CommentNotFoundException;
 import com.tamudatathon.bulletin.util.exception.EditingForbiddenException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -81,10 +81,9 @@ public class UserService {
                 }
                 this.commentRepository.delete(comment);
                 submission.removeComment(comment);
-                // this.submissionRepository.save(submission);
                 return;
             }
         }
-        throw new CommentNotFoundException(commentId);
+        throw new RecordNotFoundException("Comment", commentId);
     }
 }

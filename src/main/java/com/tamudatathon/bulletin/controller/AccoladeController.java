@@ -7,11 +7,8 @@ import java.util.stream.Collectors;
 import com.tamudatathon.bulletin.data.dtos.AccoladeDto;
 import com.tamudatathon.bulletin.data.entity.Accolade;
 import com.tamudatathon.bulletin.service.AccoladeService;
-import com.tamudatathon.bulletin.util.exception.AccoladeInvalidException;
-import com.tamudatathon.bulletin.util.exception.AccoladeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.ChallengeNotFoundException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.SubmissionNotFoundException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +39,7 @@ public class AccoladeController {
 
     @GetMapping(value={"", "/", "/list"})
     public List<AccoladeDto> getAccolades(@PathVariable Long eventId, @PathVariable Long challengeId)
-        throws EventNotFoundException, ChallengeNotFoundException {
+        throws RecordNotFoundException {
         List<Accolade> accolades = this.accoladeService.getAccolades(eventId, challengeId);
         return accolades.stream()
           .map(this::convertToDto)
@@ -51,7 +48,7 @@ public class AccoladeController {
 
     @GetMapping("/{id}")
     public AccoladeDto getAccoladeById(@PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable Long id) throws AccoladeNotFoundException, ChallengeNotFoundException, EventNotFoundException {
+        @PathVariable Long id) throws RecordNotFoundException {
         Accolade accolade = this.accoladeService.getAccolade(eventId, challengeId, id);
         return convertToDto(accolade);
     }
@@ -59,7 +56,7 @@ public class AccoladeController {
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<Object> deleteAccolade(@PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable Long id) throws AccoladeNotFoundException, ChallengeNotFoundException, EventNotFoundException {
+        @PathVariable Long id) throws RecordNotFoundException {
         this.accoladeService.deleteAccolade(eventId, challengeId, id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -69,23 +66,21 @@ public class AccoladeController {
     @ResponseStatus(HttpStatus.CREATED)
     public AccoladeDto createAccolade(@RequestBody AccoladeDto accoladeDto,
         @PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable(required=false) Long id) throws ChallengeNotFoundException, EventNotFoundException,
-        AccoladeNotFoundException, AccoladeInvalidException {
+        @PathVariable(required=false) Long id) throws RecordNotFoundException, RecordFormatInvalidException {
         try {
             Accolade accolade = this.convertToEntity(accoladeDto);
             Accolade newAccolade = this.accoladeService.addAccolade(eventId, challengeId, id, accolade);
             return convertToDto(newAccolade);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new AccoladeInvalidException(e.getMessage());
+            throw new RecordFormatInvalidException(e.getMessage());
         }
     }
 
     @RequestMapping(value={"/{id}/submissions/{submissionId}"},
         method={RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<Object> toggleAccoladeToSubmission(@PathVariable Long eventId, @PathVariable Long challengeId,
-        @PathVariable Long id, @PathVariable Long submissionId) throws AccoladeNotFoundException, ChallengeNotFoundException, 
-        EventNotFoundException, SubmissionNotFoundException {
+        @PathVariable Long id, @PathVariable Long submissionId) throws RecordNotFoundException {
         HttpStatus httpCode = this.accoladeService.toggleAccoladeToSubmission(eventId, challengeId, id, submissionId);
         return ResponseEntity.status(httpCode).build();
     }

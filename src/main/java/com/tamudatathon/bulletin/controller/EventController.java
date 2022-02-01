@@ -25,10 +25,9 @@ import com.tamudatathon.bulletin.data.dtos.EventDto;
 import com.tamudatathon.bulletin.data.dtos.ImageUploadResponseDto;
 import com.tamudatathon.bulletin.data.entity.Event;
 import com.tamudatathon.bulletin.service.EventService;
-import com.tamudatathon.bulletin.util.exception.EventInvalidException;
-import com.tamudatathon.bulletin.util.exception.EventNotFoundException;
-import com.tamudatathon.bulletin.util.exception.FileDeleteException;
-import com.tamudatathon.bulletin.util.exception.FileUploadException;
+import com.tamudatathon.bulletin.util.exception.RecordFormatInvalidException;
+import com.tamudatathon.bulletin.util.exception.RecordNotFoundException;
+import com.tamudatathon.bulletin.util.exception.S3Exception;
 
 @RestController
 @RequestMapping("${app.api.basepath}/events")
@@ -53,14 +52,14 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    public EventDto getEventById(@PathVariable Long id) throws EventNotFoundException {
+    public EventDto getEventById(@PathVariable Long id) throws RecordNotFoundException {
         Event event = this.eventService.getEvent(id);
         return convertToDto(event);
     }
 
     @DeleteMapping("/delete/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public ResponseEntity<Object> deleteEvent(@PathVariable Long id) throws EventNotFoundException {
+    public ResponseEntity<Object> deleteEvent(@PathVariable Long id) throws RecordNotFoundException {
         this.eventService.deleteEvent(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
@@ -69,14 +68,14 @@ public class EventController {
         method={RequestMethod.POST, RequestMethod.PUT})
     @ResponseStatus(HttpStatus.CREATED)
     public EventDto createEvent(
-        @RequestBody EventDto eventDto, @PathVariable(required=false) Long id) throws EventInvalidException {
+        @RequestBody EventDto eventDto, @PathVariable(required=false) Long id) throws RecordFormatInvalidException {
         try {
             Event event = convertToEntity(eventDto);
             Event newEvent = this.eventService.addEvent(id, event);
             return convertToDto(newEvent);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new EventInvalidException();
+            throw new RecordFormatInvalidException(e.getMessage());
         }
     }
 
@@ -86,25 +85,17 @@ public class EventController {
         produces=MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ImageUploadResponseDto uploadImage(@RequestPart(value = "file") MultipartFile file, @PathVariable Long id) 
-        throws FileUploadException {
-        try {
-            URL url = this.eventService.uploadImage(file, id);
-            ImageUploadResponseDto resp = new ImageUploadResponseDto();
-            resp.setUrl(url.toString());
-            return resp;
-        } catch (Exception e) {
-            throw new FileUploadException(e.getMessage());
-        }
+        throws S3Exception, RecordNotFoundException {
+        URL url = this.eventService.uploadImage(file, id);
+        ImageUploadResponseDto resp = new ImageUploadResponseDto();
+        resp.setUrl(url.toString());
+        return resp;
     }
 
     @DeleteMapping("/{id}/image/delete")
-    public ResponseEntity<Object> deleteImage(@PathVariable Long id) throws FileDeleteException {
-        try {
-            this.eventService.deleteImage(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (Exception e) {
-            throw new FileDeleteException(e.getMessage());
-        }
+    public ResponseEntity<Object> deleteImage(@PathVariable Long id) throws S3Exception, RecordNotFoundException {
+        this.eventService.deleteImage(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     // utils
