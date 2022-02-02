@@ -30,8 +30,7 @@ VOLUME /tmp
 COPY --from=0 "/bulletin/target/*-SNAPSHOT.jar" app.jar
 
 # Add config variables to Container
-ARG CONFIG_FILE=/bulletin/config.properties
-COPY ${CONFIG_FILE} application.properties
+COPY --from=0 "/bulletin/config.properties" application.properties
  
 # Fire up our Spring Boot app by default
 CMD [ "sh", "-c", "java -Dserver.port=$PORT -Xmx300m -Xss512k -XX:CICompilerCount=2 -Dfile.encoding=UTF-8 -XX:+UseContainerSupport -jar /app.jar" ]
