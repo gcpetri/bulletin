@@ -5,6 +5,7 @@ services:
     image: 'bulletin:latest'
     build:
       context: .
+      dockerfile: Dockerfile.local
     ports:
       - ${PORT}:8080
     container_name: app
