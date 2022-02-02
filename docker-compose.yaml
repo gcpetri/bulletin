@@ -6,7 +6,7 @@ services:
     build:
       context: .
     ports:
-      - 8080:8080
+      - ${PORT}:8080
     container_name: app
     depends_on:
       - db
@@ -16,6 +16,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO}
       - SPRING_JPA_DATABASE-PLATFORM=${SPRING_JPA_DATABASE-PLATFORM}
+    #volumes:
+    #  - ./bulletin:bulletin:rw/
           
   db:
     image: 'postgres:13.1-alpine'
@@ -25,3 +27,4 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  
